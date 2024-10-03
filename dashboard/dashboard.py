@@ -116,11 +116,11 @@ def see_user(df):
     ax2.grid(True)
     st.pyplot(fig2)
 
-customers_df = pd.read_csv(CURRENT_DIR + '\customers_dataset.csv')
-geolocation_df = pd.read_csv(CURRENT_DIR + '\geolocation_dataset.csv')
-orders_df = pd.read_csv(CURRENT_DIR + '\orders_dataset.csv')
+customers_df = pd.read_csv(CURRENT_DIR + '/customers_dataset.csv')
+geolocation_df = pd.read_csv(CURRENT_DIR + '/geolocation_dataset.csv')
+orders_df = pd.read_csv(CURRENT_DIR + '/orders_dataset.csv')
 cleaning(orders_df)
-payments_df = pd.read_csv(CURRENT_DIR + '\order_payments_dataset.csv')
+payments_df = pd.read_csv(CURRENT_DIR + '/order_payments_dataset.csv')
 
 groupby_city = grouping_geo(geolocation_df, customers_df)
 groupby_payment = grouping_payment(payments_df)
