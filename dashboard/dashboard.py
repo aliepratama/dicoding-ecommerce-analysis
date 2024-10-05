@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 import os
-import geopandas as gpd
 
 CURRENT_DIR = os.path.join(os.path.abspath(os.curdir), 'data')
 
@@ -14,24 +13,6 @@ def cleaning(df):
     df['order_delivered_carrier_date'] = pd.to_datetime(df['order_delivered_carrier_date'])
     df['order_delivered_customer_date'] = pd.to_datetime(df['order_delivered_customer_date'])
     df['order_estimated_delivery_date'] = pd.to_datetime(df['order_estimated_delivery_date'])
-
-def grouping_geo(df_geo, df_customer):
-    return df_customer.join(
-        df_geo.set_index('geolocation_zip_code_prefix'), 
-        on='customer_zip_code_prefix',        
-        how='inner').groupby(
-            by='customer_city').agg(
-                jumlah=pd.NamedAgg(
-                    column='customer_city', 
-                    aggfunc='count'),
-                lat=pd.NamedAgg(
-                    column='geolocation_lat', 
-                    aggfunc='first'),
-                lng=pd.NamedAgg(
-                    column='geolocation_lng', 
-                    aggfunc='first')).sort_values(
-                        by='jumlah', 
-                        ascending=False).reset_index()
 
 def grouping_payment(df_payment):
     return df_payment.groupby(
@@ -64,17 +45,6 @@ def grouping_trend(df_order, df_payment):
                 'order_status': 'count',
                 'payment_value': 'sum'
                 })
-
-def see_map(df, max_point):
-    top_point = df.iloc[:max_point]
-    geo_df = gpd.GeoDataFrame(top_point, geometry=gpd.points_from_xy(top_point['lat'], top_point['lng']))
-    world = gpd.read_file(f'{CURRENT_DIR}/110m_cultural/ne_110m_admin_0_map_units.shp')
-    fig, ax = plt.subplots()
-    ax.set_xlim([top_point['lat'].min(), top_point['lat'].max()])
-    ax.set_ylim([top_point['lng'].min(), top_point['lat'].max()])
-    world.plot(ax=ax, color='white', edgecolor='black')
-    geo_df.plot(ax=ax, column='jumlah', legend=True, legend_kwds={"label": "Sebaran pembeli", "orientation": "horizontal"})
-    st.pyplot(fig)
 
 def see_payment(df):
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -117,12 +87,10 @@ def see_user(df):
     st.pyplot(fig2)
 
 customers_df = pd.read_csv(CURRENT_DIR + '/customers_dataset.csv')
-geolocation_df = pd.read_csv(CURRENT_DIR + '/geolocation_dataset.csv')
 orders_df = pd.read_csv(CURRENT_DIR + '/orders_dataset.csv')
 cleaning(orders_df)
 payments_df = pd.read_csv(CURRENT_DIR + '/order_payments_dataset.csv')
 
-groupby_city = grouping_geo(geolocation_df, customers_df)
 groupby_payment = grouping_payment(payments_df)
 groupby_status = grouping_status(orders_df)
 groupby_trend = grouping_trend(orders_df, payments_df)
@@ -133,26 +101,17 @@ sns.set(style='dark')
 st.title('Analisis pengguna E-Commerce')
 st.text('By: Muhammad Ali Pratama')
 
-tab1, tab2, tab3, tab4 = st.tabs(['Demografi', 'Metode Pembayaran', 'Status transaksi', 'Tren pengguna'])
+tab1, tab2, tab3 = st.tabs(['Metode Pembayaran', 'Status transaksi', 'Tren pengguna'])
 
 with tab1:
-    st.text('Lihat analisis  demografi pengguna')
-    max_points = st.number_input(
-        label='Maksimal data',
-        value=4000,
-        min_value=1,
-        max_value=groupby_city.shape[0])
-    see_map(groupby_city, int(max_points))
-
-with tab2:
     st.text('Lihat Metode pembayaran yang banyak dipakai oleh pengguna')
     see_payment(groupby_payment)
 
-with tab3:
+with tab2:
     st.text('Lihat persentase status transaksi')
     see_trx(groupby_status)
 
-with tab4:
+with tab3:
     st.text('Lihat tren pengguna berdasarkan jumlah pengguna dan total pembayaran yang didapatkan oleh perusahaan')
     see_user(groupby_trend)
 
